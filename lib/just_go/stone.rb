@@ -4,12 +4,22 @@ module JustGo
   # 
   # A stone that is placed on the board.
   class Stone
-    def initialize(id: , player_number: )
+    def initialize(id: , player_number: , chain_id: nil)
       @id = id
       @player_number = player_number
+      @chain_id = chain_id
+    end
+
+    attr_reader :id
+    attr_reader :player_number
+    attr_reader :chain_id
+
+    def as_json
+      {
+        id: id,
+        player_number: player_number,
+        chain_id: chain_id
+      }
     end
   end
-
-  attr_reader :id
-  attr_reader :player_number
 end

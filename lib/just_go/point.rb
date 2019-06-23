@@ -1,3 +1,5 @@
+require 'just_go/stone'
+
 module JustGo
 
   # = Point
@@ -8,12 +10,30 @@ module JustGo
       @id = id
       @x = x
       @y = y
-      @stone = stone
+      @stone = case stone
+        when JustGo::Stone
+          stone
+        when Hash
+          JustGo::Stone.new(stone)
+        when nil 
+          stone
+        else
+          raise ArgumentError, "stone must be Stone, Hash or nil"
+        end
     end
 
     attr_reader :id
     attr_reader :x
     attr_reader :y
     attr_reader :stone
+
+    def as_json
+      {
+        id: id,
+        x: x,
+        y: y,
+        stone: stone.as_json
+      }
+    end
   end
 end
