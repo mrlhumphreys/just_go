@@ -67,7 +67,7 @@ describe JustGo::PointSet do
     end
   end
 
-  describe 'as_json' do
+  describe '#as_json' do
     it 'must return a array of hashes with attributes' do
       points = [{ id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }]
       point_set = JustGo::PointSet.new(points: points)
@@ -77,7 +77,73 @@ describe JustGo::PointSet do
       ]
 
       assert_equal expected, result
-        
+    end
+  end
+
+  describe '#find_by_id' do
+    it 'returns a point matching the id' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: nil },
+        { id: 1, x: 1, y: 0, stone: nil },
+        { id: 2, x: 2, y: 0, stone: nil }
+      ])
+      point_id = 1
+
+      point = point_set.find_by_id(point_id)
+
+      assert_instance_of JustGo::Point, point
+      assert_equal point_id, point.id 
+    end
+  end
+
+  describe '#occupied' do
+    it 'must return points where stone is not nil' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: nil },
+        { id: 2, x: 2, y: 0, stone: nil }
+      ])
+
+      result = point_set.occupied
+
+      assert result.points.all? { |p| !p.stone.nil? }
+    end
+  end
+
+  describe '#adjacent' do
+    it 'must return the points next to and orthogonal to the point' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: nil },
+        { id: 1, x: 1, y: 0, stone: nil },
+        { id: 2, x: 2, y: 0, stone: nil },
+        { id: 3, x: 0, y: 1, stone: nil },
+        { id: 4, x: 1, y: 1, stone: nil },
+        { id: 5, x: 2, y: 1, stone: nil },
+        { id: 6, x: 0, y: 2, stone: nil },
+        { id: 7, x: 1, y: 2, stone: nil },
+        { id: 8, x: 2, y: 2, stone: nil },
+      ])
+
+      point_id = 4
+
+      result = point_set.adjacent(4)
+
+      assert_equal [1, 3, 5, 7], result.points.map(&:id)
+    end
+  end
+
+  describe '#occupied_by' do
+    it 'must return all points occupied by player' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: nil },
+        { id: 2, x: 2, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } }
+      ])
+      player_number = 1
+      
+      result = point_set.occupied_by(player_number)
+
+      assert result.points.all? { |p| p.stone.player_number == player_number }
     end
   end
 end

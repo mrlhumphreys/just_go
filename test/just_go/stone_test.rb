@@ -17,7 +17,7 @@ describe JustGo::Stone do
     end
   end
 
-  describe 'as_json' do
+  describe '#as_json' do
     it 'must return a hash of attributes' do
       stone = JustGo::Stone.new(id: 1, player_number: 2, chain_id: 3)
       result = stone.as_json

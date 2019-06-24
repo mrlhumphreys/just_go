@@ -45,8 +45,59 @@ module JustGo
 
     def move(player_number, point_id)
       # check player
+      # set not play turn error
+      
       # check point is unoccupied
-      # place stone
+      # set point occupied error
+      
+      # check point for liberties
+      # set point no liberties error
+      
+      # get next group id (adjacent or max)
+      
+      point = points.find_by_id(point_id)
+      stone = build_stone(point_id, player_number) 
+      point.place(stone)
+      
+      # check if captured stones
+      # remove captured stones
+      
+      # check joined groups
+      # update joined groups 
+      
+      pass_turn
+      
+      errors.empty?
     end 
+
+    private
+
+    def build_stone(point_id, player_number)
+      JustGo::Stone.new(
+        id: next_id,
+        player_number: player_number,
+        chain_id: adjacent_chain_id(point_id, player_number) || next_chain_id
+      )
+    end
+
+    def next_id
+      (points.occupied.map { |p| p.stone.id }.max || 0) + 1
+    end
+
+    def adjacent_chain_id(point_id, player_number)
+      points.adjacent(point_id).occupied_by(player_number).map { |p| p.stone.chain_id }.first
+    end
+
+    def next_chain_id
+      (points.occupied.map { |p| p.stone.chain_id }.max || 0) + 1
+    end
+
+    def pass_turn
+      @current_player_number = next_player_number 
+    end
+
+    def next_player_number
+      current_player_number == 1 ? 2 : 1
+    end
   end
 end

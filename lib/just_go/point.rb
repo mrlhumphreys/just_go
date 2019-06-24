@@ -35,5 +35,18 @@ module JustGo
         stone: stone.as_json
       }
     end
+
+    def occupied?
+      !stone.nil?
+    end
+
+    def occupied_by?(player_number)
+      !stone.nil? && stone.player_number == player_number
+    end
+
+    def place(stone)
+      @stone = stone
+    end
+
   end
 end
