@@ -84,6 +84,22 @@ describe JustGo::Point do
     end
   end
 
+  describe '#unoccupied?' do
+    describe 'without a stone' do
+      it 'must be true' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil)
+        assert point.unoccupied?
+      end
+    end
+
+    describe 'with a stone' do
+      it 'must be false' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: 3 })
+        refute point.unoccupied?
+      end
+    end
+  end
+
   describe '#occupied_by?' do
     describe 'when occupied by the player' do
       it 'must return true' do
@@ -96,6 +112,29 @@ describe JustGo::Point do
       it 'must return false' do
         point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: 3 })
         refute point.occupied_by?(1)
+      end
+    end
+
+    describe 'when not occupied' do
+      it 'must return false' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil)
+        refute point.occupied_by?(1)
+      end
+    end
+  end
+
+  describe '#occupied_by_opponent?' do
+    describe 'when occupied by the opponent' do
+      it 'must return true' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: 3 })
+        assert point.occupied_by_opponent?(1)
+      end
+    end
+
+    describe 'when occupied by the player' do
+      it 'must return false' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: 3 })
+        refute point.occupied_by_opponent?(2)
       end
     end
 

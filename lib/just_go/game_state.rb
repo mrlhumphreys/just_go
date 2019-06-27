@@ -1,4 +1,8 @@
 require 'just_go/point_set'
+require 'just_go/errors/not_players_turn_error'
+require 'just_go/errors/point_not_empty_error'
+require 'just_go/errors/point_not_found_error'
+require 'just_go/errors/no_liberties_error'
 
 module JustGo
   
@@ -44,39 +48,41 @@ module JustGo
     end
 
     def move(player_number, point_id)
-      # check player
-      # set not play turn error
-      
-      # check point is unoccupied
-      # set point occupied error
-      
-      # check point for liberties
-      # set point no liberties error
-      
-      # get next group id (adjacent or max)
-      
+      @errors = []
+
       point = points.find_by_id(point_id)
-      stone = build_stone(point_id, player_number) 
-      point.place(stone)
+
+      if current_player_number != player_number
+        @errors.push JustGo::NotPlayersTurnError.new
+      elsif point.nil?
+        @errors.push JustGo::PointNotFoundError.new
+      elsif point.occupied? 
+        @errors.push JustGo::PointNotEmptyError.new
+      elsif points.liberties_for(point, player_number).zero? && points.deprives_liberties?(point, player_number) && !points.deprives_opponents_liberties?(point, player_number)
+        @errors.push JustGo::NoLibertiesError.new
+      else
+        stone = build_stone(point, player_number) 
+        point.place(stone)
+
+        # check if captured stones
+        # remove captured stones
       
-      # check if captured stones
-      # remove captured stones
-      
-      # check joined groups
-      # update joined groups 
-      
-      pass_turn
+        # check joined groups
+        # update joined groups 
+        
+        pass_turn
+      end
       
       errors.empty?
     end 
 
     private
 
-    def build_stone(point_id, player_number)
+    def build_stone(point, player_number)
       JustGo::Stone.new(
         id: next_id,
         player_number: player_number,
-        chain_id: adjacent_chain_id(point_id, player_number) || next_chain_id
+        chain_id: adjacent_chain_id(point, player_number) || next_chain_id
       )
     end
 
@@ -84,8 +90,9 @@ module JustGo
       (points.occupied.map { |p| p.stone.id }.max || 0) + 1
     end
 
-    def adjacent_chain_id(point_id, player_number)
-      points.adjacent(point_id).occupied_by(player_number).map { |p| p.stone.chain_id }.first
+    def adjacent_chain_id(point, player_number)
+      # similar to what's in PointSet#chains
+      points.adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.first
     end
 
     def next_chain_id

@@ -36,17 +36,28 @@ module JustGo
       }
     end
 
+    def ==(other)
+      self.id == other.id
+    end
+
     def occupied?
       !stone.nil?
+    end
+
+    def unoccupied?
+      stone.nil?
     end
 
     def occupied_by?(player_number)
       !stone.nil? && stone.player_number == player_number
     end
 
+    def occupied_by_opponent?(player_number)
+      !stone.nil? && stone.player_number != player_number
+    end
+
     def place(stone)
       @stone = stone
     end
-
   end
 end
