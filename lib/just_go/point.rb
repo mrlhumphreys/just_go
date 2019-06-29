@@ -59,5 +59,9 @@ module JustGo
     def place(stone)
       @stone = stone
     end
+
+    def capture_stone
+      @stone = nil
+    end
   end
 end

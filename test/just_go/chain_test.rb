@@ -32,4 +32,14 @@ describe JustGo::Chain do
       end
     end
   end
+
+  describe '#player_number' do
+    it 'must return the player number of the stone in the chain' do
+      point_a = JustGo::Point.new(id: 1, x: 0, y: 0, stone: { id: 1, player_number: 2, chain_id: 3})
+      point_b = JustGo::Point.new(id: 2, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 3})
+      chain = JustGo::Chain.new(points: [point_a, point_b])
+
+      assert_equal 2, chain.player_number
+    end
+  end
 end

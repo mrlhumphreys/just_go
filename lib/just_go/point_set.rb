@@ -79,27 +79,53 @@ module JustGo
       end
     end
 
-    def chains(chain_ids)
-      chain_ids.map do |c_id| 
-        _points = select { |p| p.stone && p.stone.chain_id == c_id }.points
-        JustGo::Chain.new(points: _points)
-      end 
+    def chains(chain_ids=nil)
+      if chain_ids
+        chain_ids.map do |c_id| 
+          _points = select { |p| p.stone && p.stone.chain_id == c_id }.points
+          JustGo::Chain.new(points: _points)
+        end 
+      else
+        all_chain_ids = select { |p| p.stone }.map { |p| p.stone.chain_id }.uniq 
+        chains(all_chain_ids)
+      end
     end
 
-    def liberties_for(point_or_chain, player_number)
+    def liberties_for(point_or_chain)
       adjacent(point_or_chain).unoccupied.size
     end
 
     def deprives_liberties?(point, player_number)
       chain_ids = adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.uniq
       _chains = chains(chain_ids)
-      _chains.all? { |c| liberties_for(c, player_number) == 1 }
+      _chains.all? { |c| liberties_for(c) == 1 }
     end
 
     def deprives_opponents_liberties?(point, player_number)
       chain_ids = adjacent(point).occupied_by_opponent(player_number).map { |p| p.stone.chain_id }.uniq
       _chains = chains(chain_ids)
-      _chains.any? { |c| liberties_for(c, player_number) == 1 }
+      _chains.any? { |c| liberties_for(c) == 1 }
+    end
+
+    def update_joined_chains(point, player_number)
+      existing_chain_ids = adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.uniq
+      existing_chains = chains(existing_chain_ids)
+
+      existing_chains.each do |c|
+        c.points.each do |p|
+          p.stone.join_chain(point.stone) 
+        end
+      end
+    end
+
+    def capture_stones(player_number)
+      chains.select do |c| 
+        c.player_number != player_number && liberties_for(c) == 0 
+      end.each do |c| 
+        c.points.each do |p|
+          p.capture_stone
+        end  
+      end
     end
   end
 end

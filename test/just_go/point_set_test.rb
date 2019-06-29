@@ -233,24 +233,48 @@ describe JustGo::PointSet do
   end
 
   describe '#chains' do
-    it 'must return an array of chains' do
-      point_set = JustGo::PointSet.new(points: [
-        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
-        { id: 1, x: 1, y: 0, stone: nil },
-        { id: 2, x: 2, y: 0, stone: { id: 3, player_number: 2, chain_id: 2 } },
-        { id: 3, x: 0, y: 1, stone: { id: 4, player_number: 1, chain_id: 1 } },
-        { id: 4, x: 1, y: 1, stone: nil },
-        { id: 5, x: 2, y: 1, stone: { id: 5, player_number: 2, chain_id: 2 } },
-        { id: 6, x: 0, y: 2, stone: { id: 6, player_number: 1, chain_id: 1 } },
-        { id: 7, x: 1, y: 2, stone: nil },
-        { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 2, chain_id: 2 } }
-      ])
+    describe 'specifying chain_ids' do
+      it 'must return an array of chains' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil },
+          { id: 2, x: 2, y: 0, stone: { id: 3, player_number: 2, chain_id: 2 } },
+          { id: 3, x: 0, y: 1, stone: { id: 4, player_number: 1, chain_id: 1 } },
+          { id: 4, x: 1, y: 1, stone: nil },
+          { id: 5, x: 2, y: 1, stone: { id: 5, player_number: 2, chain_id: 2 } },
+          { id: 6, x: 0, y: 2, stone: { id: 6, player_number: 1, chain_id: 1 } },
+          { id: 7, x: 1, y: 2, stone: nil },
+          { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 2, chain_id: 2 } }
+        ])
 
-      chain_id = 1
-      result = point_set.chains([chain_id])
+        chain_id = 1
+        result = point_set.chains([chain_id])
 
-      assert result.all? { |c| c.is_a?(JustGo::Chain) }
-      assert result.all? { |c| c.points.first.stone.chain_id == chain_id }
+        assert result.all? { |c| c.is_a?(JustGo::Chain) }
+        assert result.all? { |c| c.points.first.stone.chain_id == chain_id }
+      end
+    end
+
+    describe 'with no chain_ids passed in' do
+      it 'must return all chains' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil },
+          { id: 2, x: 2, y: 0, stone: { id: 3, player_number: 2, chain_id: 2 } },
+          { id: 3, x: 0, y: 1, stone: { id: 4, player_number: 1, chain_id: 1 } },
+          { id: 4, x: 1, y: 1, stone: nil },
+          { id: 5, x: 2, y: 1, stone: { id: 5, player_number: 2, chain_id: 2 } },
+          { id: 6, x: 0, y: 2, stone: { id: 6, player_number: 1, chain_id: 1 } },
+          { id: 7, x: 1, y: 2, stone: nil },
+          { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 2, chain_id: 2 } }
+        ])
+
+        chain_id = 1
+        result = point_set.chains
+
+        assert_equal 2, result.size
+        assert result.all? { |c| c.is_a?(JustGo::Chain) }
+      end
     end
   end
 
@@ -271,7 +295,7 @@ describe JustGo::PointSet do
         point = point_set.points.find { |p| p.id == 4 } 
         player_number = 2
 
-        result = point_set.liberties_for(point, player_number)
+        result = point_set.liberties_for(point)
 
         assert_equal 2, result
       end
@@ -293,7 +317,7 @@ describe JustGo::PointSet do
         point = point_set.points.find { |p| p.id == 4 } 
         player_number = 2
 
-        result = point_set.liberties_for(point, player_number)
+        result = point_set.liberties_for(point)
 
         assert_equal 0, result
       end
@@ -384,6 +408,85 @@ describe JustGo::PointSet do
 
         result = point_set.deprives_opponents_liberties?(point, player_number)
         assert result
+      end
+    end
+  end
+
+  describe '#update_joined_chains' do
+    describe 'with point adjacent to some chains' do
+      it 'must update the chains that are adjacent' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 1, chain_id: 1 } },
+          { id: 2, x: 2, y: 0, stone: { id: 3, player_number: 1, chain_id: 1 } },
+          { id: 3, x: 0, y: 1, stone: nil },
+          { id: 4, x: 1, y: 1, stone: { id: 5, player_number: 1, chain_id: 1 } },
+          { id: 5, x: 2, y: 1, stone: nil },
+          { id: 6, x: 0, y: 2, stone: { id: 6, player_number: 1, chain_id: 2 } },
+          { id: 7, x: 1, y: 2, stone: { id: 7, player_number: 1, chain_id: 2 } },
+          { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 2 } }
+        ])
+
+        point = point_set.points.find { |p| p.id == 4 }
+        player_number = 1
+
+        point_set.update_joined_chains(point, player_number)
+        
+        assert_equal 1, point_set.points.select { |p| [0, 1, 2, 4, 6, 7, 8].include?(p.id) }.map { |p| p.stone && p.stone.chain_id }.uniq.size
+      end
+    end
+
+    describe 'with point adjacent to no chains' do
+      it 'must not update the chains that are not adjacent' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 1, chain_id: 1 } },
+          { id: 2, x: 2, y: 0, stone: { id: 3, player_number: 1, chain_id: 1 } },
+          { id: 3, x: 0, y: 1, stone: nil },
+          { id: 4, x: 1, y: 1, stone: { id: 5, player_number: 1, chain_id: 1 } },
+          { id: 5, x: 2, y: 1, stone: nil },
+          { id: 6, x: 0, y: 2, stone: nil },
+          { id: 7, x: 1, y: 2, stone: nil },
+          { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 2 } }
+        ])
+
+        point = point_set.points.find { |p| p.id == 4 }
+        player_number = 1
+
+        point_set.update_joined_chains(point, player_number)
+        
+        non_adjacent_point = point_set.points.find { |p| p.id == 8 }
+
+        refute_equal point.stone.chain_id, non_adjacent_point.stone.chain_id
+      end
+    end
+  end
+
+  describe '#capture_stones' do
+    describe 'with chains with no liberties' do
+      it 'must remove those chains' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+          { id: 2, x: 2, y: 0, stone: nil },
+          { id: 3, x: 0, y: 1, stone: { id: 3, player_number: 2, chain_id: 2 } },
+          { id: 4, x: 1, y: 1, stone: nil },
+          { id: 5, x: 2, y: 1, stone: nil },
+          { id: 6, x: 0, y: 2, stone: nil },
+          { id: 7, x: 1, y: 2, stone: nil },
+          { id: 8, x: 2, y: 2, stone: nil }
+        ])
+
+        point_set.capture_stones(2)
+        captured_point = point_set.points.find { |p| p.id == 0 }
+
+        refute captured_point.stone
+      end
+    end
+
+    describe 'with chains with liberties' do
+      it 'must not remove any chains' do
+
       end
     end
   end

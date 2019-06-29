@@ -58,17 +58,15 @@ module JustGo
         @errors.push JustGo::PointNotFoundError.new
       elsif point.occupied? 
         @errors.push JustGo::PointNotEmptyError.new
-      elsif points.liberties_for(point, player_number).zero? && points.deprives_liberties?(point, player_number) && !points.deprives_opponents_liberties?(point, player_number)
+      elsif points.liberties_for(point).zero? && points.deprives_liberties?(point, player_number) && !points.deprives_opponents_liberties?(point, player_number)
         @errors.push JustGo::NoLibertiesError.new
       else
         stone = build_stone(point, player_number) 
         point.place(stone)
 
-        # check if captured stones
-        # remove captured stones
-      
-        # check joined groups
-        # update joined groups 
+        points.update_joined_chains(point, player_number)
+
+        points.capture_stones(player_number)
         
         pass_turn
       end

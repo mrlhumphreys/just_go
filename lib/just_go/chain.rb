@@ -15,6 +15,10 @@ module JustGo
     attr_reader :points
 
     def_delegator :points, :include?
+
+    def player_number
+      points.first.stone.player_number
+    end
   end
 end
 

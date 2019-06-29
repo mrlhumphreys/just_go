@@ -686,15 +686,118 @@ describe JustGo::GameState do
       end
 
       it 'must not set an error' do
+        @game_state.move(@player_number, @point_id)
+        
+        error = @game_state.errors.first
 
+        assert_nil error
       end
 
       it 'must pass the turn' do
+        @game_state.move(@player_number, @point_id)
 
+        assert_equal 2, @game_state.current_player_number
       end
 
       it 'must return true' do
+        result = @game_state.move(@player_number, @point_id)
 
+        assert result
+      end
+    end
+
+    describe 'move connects stones' do
+      it 'joins them in one chain' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil },
+            { id: 1, x: 1, y: 0, stone: nil },
+            { id: 2, x: 2, y: 0, stone: nil },
+            { id: 3, x: 3, y: 0, stone: nil },
+            { id: 4, x: 4, y: 0, stone: nil },
+
+            { id: 5, x: 0, y: 1, stone: nil },
+            { id: 6, x: 1, y: 1, stone: { id: 1, player_number: 2, chain_id: 1 } },
+            { id: 7, x: 2, y: 1, stone: { id: 2, player_number: 2, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: { id: 3, player_number: 2, chain_id: 1 } },
+            { id: 9, x: 4, y: 1, stone: nil },
+
+            { id: 10, x: 0, y: 2, stone: nil },
+            { id: 11, x: 1, y: 2, stone: nil },
+            { id: 12, x: 2, y: 2, stone: nil },
+            { id: 13, x: 3, y: 2, stone: nil },
+            { id: 14, x: 4, y: 2, stone: nil },
+
+            { id: 15, x: 0, y: 3, stone: nil },
+            { id: 16, x: 1, y: 3, stone: { id: 4, player_number: 2, chain_id: 2 } },
+            { id: 17, x: 2, y: 3, stone: { id: 5, player_number: 2, chain_id: 2 } },
+            { id: 18, x: 3, y: 3, stone: { id: 6, player_number: 2, chain_id: 2 } },
+            { id: 19, x: 4, y: 3, stone: nil },
+
+            { id: 20, x: 0, y: 4, stone: nil },
+            { id: 21, x: 1, y: 4, stone: nil },
+            { id: 22, x: 2, y: 4, stone: nil },
+            { id: 23, x: 3, y: 4, stone: nil },
+            { id: 24, x: 4, y: 4, stone: nil }
+          ]
+        )
+
+        player_number = 2 
+        point_id = 12 
+
+        game_state.move(player_number, point_id)
+
+        points = game_state.points.points.select { |p| [6, 7, 8, 12, 16, 17, 18].include?(p.id) }
+        assert_equal 1, points.map { |p| p.stone.chain_id }.uniq.size
+      end
+    end
+
+    describe 'move surrounds stone' do
+      it 'removes surrounded stone' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil },
+            { id: 1, x: 1, y: 0, stone: nil },
+            { id: 2, x: 2, y: 0, stone: nil },
+            { id: 3, x: 3, y: 0, stone: nil },
+            { id: 4, x: 4, y: 0, stone: nil },
+
+            { id: 5, x: 0, y: 1, stone: nil },
+            { id: 6, x: 1, y: 1, stone: { id: 1, player_number: 2, chain_id: 1 } },
+            { id: 7, x: 2, y: 1, stone: { id: 2, player_number: 2, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: { id: 3, player_number: 2, chain_id: 1 } },
+            { id: 9, x: 4, y: 1, stone: nil },
+
+            { id: 10, x: 0, y: 2, stone: nil },
+            { id: 11, x: 1, y: 2, stone: { id: 7, player_number: 2, chain_id: 1 } },
+            { id: 12, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 2 } },
+            { id: 13, x: 3, y: 2, stone: nil },
+            { id: 14, x: 4, y: 2, stone: nil },
+
+            { id: 15, x: 0, y: 3, stone: nil },
+            { id: 16, x: 1, y: 3, stone: { id: 4, player_number: 2, chain_id: 1 } },
+            { id: 17, x: 2, y: 3, stone: { id: 5, player_number: 2, chain_id: 1 } },
+            { id: 18, x: 3, y: 3, stone: { id: 6, player_number: 2, chain_id: 1 } },
+            { id: 19, x: 4, y: 3, stone: nil },
+
+            { id: 20, x: 0, y: 4, stone: nil },
+            { id: 21, x: 1, y: 4, stone: nil },
+            { id: 22, x: 2, y: 4, stone: nil },
+            { id: 23, x: 3, y: 4, stone: nil },
+            { id: 24, x: 4, y: 4, stone: nil }
+          ]
+        )
+
+        player_number = 2 
+        point_id = 13 
+
+        game_state.move(player_number, point_id)
+
+        capture_point = game_state.points.points.find { |p| p.id == 12 } 
+
+        refute capture_point.stone
       end
     end
   end

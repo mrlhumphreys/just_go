@@ -21,5 +21,9 @@ module JustGo
         chain_id: chain_id
       }
     end
+
+    def join_chain(stone)
+      @chain_id = stone.chain_id
+    end
   end
 end
