@@ -12,10 +12,11 @@ module JustGo
   class GameState
     BOARD_SIZE = 19
 
-    def initialize(current_player_number: , points: , prisoner_counts: )
+    def initialize(current_player_number: , points: , prisoner_counts: , previous_state: nil)
       @current_player_number = current_player_number
       @points = JustGo::PointSet.new(points: points)
       @prisoner_counts = prisoner_counts
+      @previous_state = previous_state
       @errors = []
       @last_change = {}
     end
@@ -23,6 +24,7 @@ module JustGo
     attr_reader :current_player_number 
     attr_reader :points
     attr_reader :prisoner_counts
+    attr_reader :previous_state
     attr_reader :errors 
     attr_reader :last_change 
 
@@ -42,7 +44,8 @@ module JustGo
         prisoner_counts: { 
           1 => 0,
           2 => 0,
-        }
+        },
+        previous_state: nil
       )
     end
 
@@ -50,7 +53,8 @@ module JustGo
       {
         current_player_number: current_player_number,
         points: points.as_json,
-        prisoner_counts: prisoner_counts
+        prisoner_counts: prisoner_counts,
+        previous_state: previous_state
       }
     end
 
@@ -68,6 +72,8 @@ module JustGo
       elsif points.liberties_for(point).zero? && points.deprives_liberties?(point, player_number) && !points.deprives_opponents_liberties?(point, player_number)
         @errors.push JustGo::NoLibertiesError.new
       else
+        @previous_state = points.minify
+
         stone = build_stone(point, player_number) 
         point.place(stone)
 

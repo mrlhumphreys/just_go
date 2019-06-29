@@ -14,11 +14,13 @@ describe JustGo::GameState do
         prisoner_counts: {
           1 => 0,
           2 => 0
-        }
+        },
+        previous_state: "w"
       )
       assert_equal 1, game_state.current_player_number
       assert_instance_of JustGo::PointSet, game_state.points
       assert_instance_of Hash, game_state.prisoner_counts
+      assert_equal "w", game_state.previous_state
     end
 
     it 'must default errors and last_change' do
@@ -63,7 +65,8 @@ describe JustGo::GameState do
         prisoner_counts: {
           1 => 0,
           2 => 0
-        }
+        },
+        previous_state: nil
       }
       assert_equal expected, result
     end
@@ -71,8 +74,8 @@ describe JustGo::GameState do
 
   describe '#move' do
     describe 'that is valid' do
-      it 'places the stone' do
-        game_state = JustGo::GameState.new(
+      before do
+        @game_state = JustGo::GameState.new(
           current_player_number: 1,
           points: [
             { id: 0, x: 0, y: 0, stone: nil },
@@ -82,94 +85,43 @@ describe JustGo::GameState do
             { id: 4, x: 1, y: 1, stone: nil },
             { id: 5, x: 2, y: 1, stone: nil },
             { id: 6, x: 0, y: 2, stone: nil },
-            { id: 7, x: 1, y: 2, stone: nil },
-            { id: 8, x: 2, y: 2, stone: nil }
+            { id: 7, x: 1, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } },
+            { id: 8, x: 2, y: 2, stone: { id: 1, player_number: 1, chain_id: 1 } }
           ],
           prisoner_counts: {
             1 => 0,
             2 => 0
           }
         )
-        player_number = 1
-        point_id = 4
-        game_state.move(player_number, point_id)
-        stone = game_state.points.points.find { |p| p.id == point_id }.stone
+        @player_number = 1
+        @point_id = 4
+      end
+
+      it 'places the stone' do
+        @game_state.move(@player_number, @point_id)
+        stone = @game_state.points.points.find { |p| p.id == @point_id }.stone
         assert stone
-        assert_equal player_number, stone.player_number
+        assert_equal @player_number, stone.player_number
       end
 
       it 'passes the turn' do
-        game_state = JustGo::GameState.new(
-          current_player_number: 1,
-          points: [
-            { id: 0, x: 0, y: 0, stone: nil },
-            { id: 1, x: 1, y: 0, stone: nil },
-            { id: 2, x: 2, y: 0, stone: nil },
-            { id: 3, x: 0, y: 1, stone: nil },
-            { id: 4, x: 1, y: 1, stone: nil },
-            { id: 5, x: 2, y: 1, stone: nil },
-            { id: 6, x: 0, y: 2, stone: nil },
-            { id: 7, x: 1, y: 2, stone: nil },
-            { id: 8, x: 2, y: 2, stone: nil }
-          ],
-          prisoner_counts: {
-            1 => 0,
-            2 => 0
-          }
-        )
-
-        game_state.move(1, 4)
-        assert_equal 2, game_state.current_player_number
+        @game_state.move(@player_number, @point_id)
+        assert_equal 2, @game_state.current_player_number
       end
 
       it 'sets no errors' do
-        game_state = JustGo::GameState.new(
-          current_player_number: 1,
-          points: [
-            { id: 0, x: 0, y: 0, stone: nil },
-            { id: 1, x: 1, y: 0, stone: nil },
-            { id: 2, x: 2, y: 0, stone: nil },
-            { id: 3, x: 0, y: 1, stone: nil },
-            { id: 4, x: 1, y: 1, stone: nil },
-            { id: 5, x: 2, y: 1, stone: nil },
-            { id: 6, x: 0, y: 2, stone: nil },
-            { id: 7, x: 1, y: 2, stone: nil },
-            { id: 8, x: 2, y: 2, stone: nil }
-          ],
-          prisoner_counts: {
-            1 => 0,
-            2 => 0
-          }
-        )
-
-        game_state.move(1, 4)
-
-        assert_empty game_state.errors
+        @game_state.move(@player_number, @point_id)
+        assert_empty @game_state.errors
       end
 
       it 'returns true' do
-        game_state = JustGo::GameState.new(
-          current_player_number: 1,
-          points: [
-            { id: 0, x: 0, y: 0, stone: nil },
-            { id: 1, x: 1, y: 0, stone: nil },
-            { id: 2, x: 2, y: 0, stone: nil },
-            { id: 3, x: 0, y: 1, stone: nil },
-            { id: 4, x: 1, y: 1, stone: nil },
-            { id: 5, x: 2, y: 1, stone: nil },
-            { id: 6, x: 0, y: 2, stone: nil },
-            { id: 7, x: 1, y: 2, stone: nil },
-            { id: 8, x: 2, y: 2, stone: nil }
-          ],
-          prisoner_counts: {
-            1 => 0,
-            2 => 0
-          }
-        )
-
-        result = game_state.move(1, 4)
-
+        result = @game_state.move(@player_number, @point_id)
         assert result
+      end
+
+      it 'stores the previous state' do
+        @game_state.move(@player_number, @point_id)
+        assert_equal '-------21', @game_state.previous_state
       end
     end
 

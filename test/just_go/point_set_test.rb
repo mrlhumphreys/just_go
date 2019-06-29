@@ -506,4 +506,24 @@ describe JustGo::PointSet do
       end
     end
   end
+
+  describe '#minify' do
+    it 'must return a string representing the board state' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+        { id: 2, x: 2, y: 0, stone: nil },
+        { id: 3, x: 0, y: 1, stone: nil },
+        { id: 4, x: 1, y: 1, stone: { id: 3, player_number: 1, chain_id: 3 } },
+        { id: 5, x: 2, y: 1, stone: { id: 4, player_number: 2, chain_id: 4 } },
+        { id: 6, x: 0, y: 2, stone: nil },
+        { id: 7, x: 1, y: 2, stone: nil },
+        { id: 8, x: 2, y: 2, stone: nil }
+      ])
+
+      result = point_set.minify
+
+      assert_equal '12--12---', result
+    end
+  end
 end

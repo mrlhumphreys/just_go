@@ -132,5 +132,12 @@ module JustGo
       
       stone_count
     end
+
+    def minify
+      points.map do |p|
+        player_number = p.stone && p.stone.player_number
+        player_number ? player_number.to_s : '-'
+      end.join
+    end
   end
 end
