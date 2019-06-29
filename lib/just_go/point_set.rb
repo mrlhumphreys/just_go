@@ -119,13 +119,18 @@ module JustGo
     end
 
     def capture_stones(player_number)
+      stone_count = 0
+
       chains.select do |c| 
         c.player_number != player_number && liberties_for(c) == 0 
       end.each do |c| 
         c.points.each do |p|
           p.capture_stone
+          stone_count += 1
         end  
       end
+      
+      stone_count
     end
   end
 end

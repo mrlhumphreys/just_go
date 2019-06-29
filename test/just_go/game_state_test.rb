@@ -10,14 +10,19 @@ describe JustGo::GameState do
         current_player_number: 1,
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }
-        ]
+        ],
+        prisoner_counts: {
+          1 => 0,
+          2 => 0
+        }
       )
       assert_equal 1, game_state.current_player_number
       assert_instance_of JustGo::PointSet, game_state.points
+      assert_instance_of Hash, game_state.prisoner_counts
     end
 
     it 'must default errors and last_change' do
-      game_state = JustGo::GameState.new(current_player_number: 1, points: [])
+      game_state = JustGo::GameState.new(current_player_number: 1, points: [], prisoner_counts: { 1 => 0, 2 => 0 })
       assert_equal [], game_state.errors
       assert_equal({}, game_state.last_change)
     end
@@ -33,6 +38,7 @@ describe JustGo::GameState do
       assert_equal 19, points.map(&:x).uniq.size
       assert_equal 19, points.map(&:y).uniq.size
       assert points.map(&:stone).all?(&:nil?)
+      assert_equal({ 1 => 0, 2 => 0 }, game_state.prisoner_counts)
     end
   end
 
@@ -42,14 +48,22 @@ describe JustGo::GameState do
         current_player_number: 1,
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }
-        ]
+        ],
+        prisoner_counts: {
+          1 => 0,
+          2 => 0
+        }
       )
       result = game_state.as_json
       expected = {
         current_player_number: 1,
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil } }
-        ]
+        ],
+        prisoner_counts: {
+          1 => 0,
+          2 => 0
+        }
       }
       assert_equal expected, result
     end
@@ -70,7 +84,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
         player_number = 1
         point_id = 4
@@ -93,7 +111,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         game_state.move(1, 4)
@@ -113,7 +135,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         game_state.move(1, 4)
@@ -134,7 +160,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         result = game_state.move(1, 4)
@@ -157,7 +187,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 4
@@ -179,7 +213,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 4
@@ -203,7 +241,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 4
@@ -227,7 +269,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 4
@@ -251,7 +297,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 1
@@ -276,7 +326,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         point_id = 7 
@@ -301,7 +355,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         ) 
         @player_number = 1
         @point_id = 8 
@@ -350,7 +408,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 1
+          }
         )
         @player_number = 2 
         @point_id = 0 
@@ -400,7 +462,11 @@ describe JustGo::GameState do
             { id: 6, x: 0, y: 2, stone: nil },
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
         @player_number = 2 
         @point_id = 999 
@@ -461,7 +527,11 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: nil },
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil },
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
         @player_number = 2 
         @point_id = 12 
@@ -530,7 +600,11 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: { id: 22, player_number: 1, chain_id: 1 } },
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         @player_number = 2 
@@ -600,7 +674,11 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: { id: 22, player_number: 1, chain_id: 1 } },
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         @player_number = 2 
@@ -670,7 +748,11 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: { id: 22, player_number: 1, chain_id: 1 } },
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         @player_number = 1 
@@ -740,7 +822,11 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: nil },
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
         player_number = 2 
@@ -754,8 +840,8 @@ describe JustGo::GameState do
     end
 
     describe 'move surrounds stone' do
-      it 'removes surrounded stone' do
-        game_state = JustGo::GameState.new(
+      before do
+        @game_state = JustGo::GameState.new(
           current_player_number: 2,
           points: [
             { id: 0, x: 0, y: 0, stone: nil },
@@ -787,17 +873,29 @@ describe JustGo::GameState do
             { id: 22, x: 2, y: 4, stone: nil },
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil }
-          ]
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          }
         )
 
-        player_number = 2 
-        point_id = 13 
+        @player_number = 2 
+        @point_id = 13 
+      end
 
-        game_state.move(player_number, point_id)
+      it 'removes surrounded stone' do
+        @game_state.move(@player_number, @point_id)
 
-        capture_point = game_state.points.points.find { |p| p.id == 12 } 
+        capture_point = @game_state.points.points.find { |p| p.id == 12 } 
 
         refute capture_point.stone
+      end
+
+      it 'increments prisoner_counts' do
+        @game_state.move(@player_number, @point_id)
+
+        assert_equal 1, @game_state.prisoner_counts[2] 
       end
     end
   end

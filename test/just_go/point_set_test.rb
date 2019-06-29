@@ -477,16 +477,32 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: nil }
         ])
 
-        point_set.capture_stones(2)
+        stone_count = point_set.capture_stones(2)
         captured_point = point_set.points.find { |p| p.id == 0 }
 
         refute captured_point.stone
+        assert_equal 1, stone_count
       end
     end
 
     describe 'with chains with liberties' do
       it 'must not remove any chains' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+          { id: 2, x: 2, y: 0, stone: nil },
+          { id: 3, x: 0, y: 1, stone: nil },
+          { id: 4, x: 1, y: 1, stone: nil },
+          { id: 5, x: 2, y: 1, stone: nil },
+          { id: 6, x: 0, y: 2, stone: nil },
+          { id: 7, x: 1, y: 2, stone: nil },
+          { id: 8, x: 2, y: 2, stone: nil }
+        ])
 
+        point_set.capture_stones(2)
+        points = point_set.points.select { |p| p.stone != nil }
+
+        assert_equal 2, points.size 
       end
     end
   end

@@ -12,15 +12,17 @@ module JustGo
   class GameState
     BOARD_SIZE = 19
 
-    def initialize(current_player_number: , points: )
+    def initialize(current_player_number: , points: , prisoner_counts: )
       @current_player_number = current_player_number
       @points = JustGo::PointSet.new(points: points)
+      @prisoner_counts = prisoner_counts
       @errors = []
       @last_change = {}
     end
 
     attr_reader :current_player_number 
     attr_reader :points
+    attr_reader :prisoner_counts
     attr_reader :errors 
     attr_reader :last_change 
 
@@ -36,14 +38,19 @@ module JustGo
               stone: nil 
             }
           end
-        end.flatten
+        end.flatten,
+        prisoner_counts: { 
+          1 => 0,
+          2 => 0,
+        }
       )
     end
 
     def as_json
       {
         current_player_number: current_player_number,
-        points: points.as_json
+        points: points.as_json,
+        prisoner_counts: prisoner_counts
       }
     end
 
@@ -66,7 +73,8 @@ module JustGo
 
         points.update_joined_chains(point, player_number)
 
-        points.capture_stones(player_number)
+        stone_count = points.capture_stones(player_number)
+        prisoner_counts[player_number] += stone_count
         
         pass_turn
       end
