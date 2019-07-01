@@ -850,5 +850,73 @@ describe JustGo::GameState do
         assert_equal 1, @game_state.prisoner_counts[2] 
       end
     end
+
+    describe 'move puts board to previous position' do
+      before do
+        @game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil },
+            { id: 1, x: 1, y: 0, stone: nil },
+            { id: 2, x: 2, y: 0, stone: nil },
+            { id: 3, x: 3, y: 0, stone: nil },
+            { id: 4, x: 4, y: 0, stone: nil },
+
+            { id: 5, x: 0, y: 1, stone: nil },
+            { id: 6, x: 1, y: 1, stone: nil },
+            { id: 7, x: 2, y: 1, stone: { id: 1, player_number: 1, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: { id: 5, player_number: 2, chain_id: 5 } },
+            { id: 9, x: 4, y: 1, stone: nil },
+
+            { id: 10, x: 0, y: 2, stone: nil },
+            { id: 11, x: 1, y: 2, stone: { id: 2, player_number: 1, chain_id: 2 } },
+            { id: 12, x: 2, y: 2, stone: nil },
+            { id: 13, x: 3, y: 2, stone: { id: 3, player_number: 1, chain_id: 3 } },
+            { id: 14, x: 4, y: 2, stone: { id: 6, player_number: 2, chain_id: 6 } },
+
+            { id: 15, x: 0, y: 3, stone: nil },
+            { id: 16, x: 1, y: 3, stone: nil },
+            { id: 17, x: 2, y: 3, stone: { id: 4, player_number: 1, chain_id: 4 } },
+            { id: 18, x: 3, y: 3, stone: { id: 7, player_number: 2, chain_id: 7 } },
+            { id: 19, x: 4, y: 3, stone: nil },
+
+            { id: 20, x: 0, y: 4, stone: nil },
+            { id: 21, x: 1, y: 4, stone: nil },
+            { id: 22, x: 2, y: 4, stone: nil },
+            { id: 23, x: 3, y: 4, stone: nil },
+            { id: 24, x: 4, y: 4, stone: nil }
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          },
+          previous_state: '-------12--12-2--12------' 
+        )
+        @point_id = 12
+        @player_number = 2
+      end
+
+      it 'must not place stone' do
+        @game_state.move(@player_number, @point_id)
+
+        point = @game_state.points.points.find { |p| p.id == @point_id }
+
+        assert_nil point.stone
+      end
+
+      it 'must add error' do
+        @game_state.move(@player_number, @point_id)
+
+        error = @game_state.errors.first
+
+        assert_instance_of JustGo::KoRuleViolationError, error 
+      end
+
+      it 'must return false' do
+        result = @game_state.move(@player_number, @point_id)
+
+        refute result
+      end
+    end
   end
 end

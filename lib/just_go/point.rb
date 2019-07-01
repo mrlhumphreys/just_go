@@ -28,11 +28,12 @@ module JustGo
     attr_reader :stone
 
     def as_json
+      _stone = stone ? stone.as_json : nil
       {
         id: id,
         x: x,
         y: y,
-        stone: stone.as_json
+        stone: _stone
       }
     end
 

@@ -427,10 +427,10 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 2 } }
         ])
 
-        point = point_set.points.find { |p| p.id == 4 }
+        point_id = 4
         player_number = 1
 
-        point_set.update_joined_chains(point, player_number)
+        point_set.update_joined_chains(point_id, player_number)
         
         assert_equal 1, point_set.points.select { |p| [0, 1, 2, 4, 6, 7, 8].include?(p.id) }.map { |p| p.stone && p.stone.chain_id }.uniq.size
       end
@@ -450,10 +450,11 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 2 } }
         ])
 
-        point = point_set.points.find { |p| p.id == 4 }
+        point_id = 4
+        point = point_set.points.find { |p| p.id == point_id }
         player_number = 1
 
-        point_set.update_joined_chains(point, player_number)
+        point_set.update_joined_chains(point_id, player_number)
         
         non_adjacent_point = point_set.points.find { |p| p.id == 8 }
 
@@ -524,6 +525,192 @@ describe JustGo::PointSet do
       result = point_set.minify
 
       assert_equal '12--12---', result
+    end
+  end
+
+  describe '#place' do
+    it 'adds stone on to the point' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+        { id: 2, x: 2, y: 0, stone: nil },
+        { id: 3, x: 0, y: 1, stone: nil },
+        { id: 4, x: 1, y: 1, stone: { id: 3, player_number: 1, chain_id: 3 } },
+        { id: 5, x: 2, y: 1, stone: { id: 4, player_number: 2, chain_id: 4 } },
+        { id: 6, x: 0, y: 2, stone: nil },
+        { id: 7, x: 1, y: 2, stone: nil },
+        { id: 8, x: 2, y: 2, stone: nil }
+      ])
+
+      point_id = 3
+
+      stone = JustGo::Stone.new(id: 5, player_number: 1, chain_id: 5)
+
+      point_set.place(point_id, stone)
+
+      placed_point = point_set.points.find { |p| p.id == point_id }
+
+      assert_equal stone, placed_point.stone
+    end
+  end
+
+  describe '#next_stone_id' do
+    describe 'with not points occupied' do
+      it 'must return 1' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: nil },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+        assert_equal 1, point_set.next_stone_id
+      end
+    end
+
+    describe 'with a point occupied' do
+      it 'must return the max point id + 1' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+        assert_equal 2, point_set.next_stone_id
+      end
+    end
+  end
+
+  describe '#adjacent_chain_id' do
+    describe 'with no stones adjacent' do
+      it 'must return nil' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: nil },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+        point = point_set.points.find { |p| p.id == 1 }
+        player_number = 1
+
+        assert_nil point_set.adjacent_chain_id(point, player_number)
+      end
+    end
+
+    describe 'with stones adjacent' do
+      it 'must return the adjacent chain id' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+        point = point_set.points.find { |p| p.id == 1 }
+        player_number = 1
+
+        assert_equal 1, point_set.adjacent_chain_id(point, player_number)
+      end
+    end 
+  end
+
+  describe '#next_chain_id' do
+    describe 'with no occupied points' do
+      it 'must return 1' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: nil },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+
+        assert_equal 1, point_set.next_chain_id
+      end
+    end
+
+    describe 'with an occupied point' do
+      it 'must return the max chain id + 1' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil }
+        ])
+
+        assert_equal 2, point_set.next_chain_id
+      end
+    end
+  end
+
+  describe '#build_stone' do
+    it 'must return a new stone with id and chain id set' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: nil }
+      ])
+      point = point_set.points.find { |p| p.id == 1 }
+      player_number = 2
+
+      stone = point_set.build_stone(point, player_number)
+      
+      assert_instance_of JustGo::Stone, stone
+      assert_equal 2, stone.id
+      assert_equal player_number, stone.player_number
+      assert_equal 2, stone.chain_id
+    end
+  end
+
+  describe '#perform_move' do
+    before do
+      @point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+        { id: 2, x: 2, y: 0, stone: nil },
+        { id: 3, x: 0, y: 1, stone: nil },
+        { id: 4, x: 1, y: 1, stone: { id: 3, player_number: 2, chain_id: 2 } },
+        { id: 5, x: 2, y: 1, stone: nil },
+        { id: 6, x: 0, y: 2, stone: nil },
+        { id: 7, x: 1, y: 2, stone: nil },
+        { id: 8, x: 2, y: 2, stone: nil }
+      ])
+      @point = @point_set.points.find { |p| p.id == 3 }
+      @player_number = 2
+    end
+
+    it 'places a stone' do
+      @point_set.perform_move(@point, @player_number)
+      placed_point = @point_set.points.find { |p| p.id == 3 }
+      stone = placed_point.stone 
+
+      assert_instance_of JustGo::Stone, stone
+    end
+
+    it 'updates chains' do
+      @point_set.perform_move(@point, @player_number)
+      chain_points = @point_set.points.select { |p| p.stone && p.stone.chain_id == 2 }
+
+      assert_equal 3, chain_points.size
+    end
+
+    it 'captures stones' do
+      @point_set.perform_move(@point, @player_number)
+
+      capture_point = @point_set.points.find { |p| p.id == 0 }
+      stone = capture_point.stone 
+
+      assert_nil stone
+    end
+
+    it 'returns captured stone count' do
+      result = @point_set.perform_move(@point, @player_number)
+
+      assert_equal 1, result
+    end
+  end
+
+  describe '#dup' do
+    it 'must return a copy of the point set' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 1, x: 1, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } },
+        { id: 2, x: 2, y: 0, stone: nil },
+        { id: 3, x: 0, y: 1, stone: nil },
+        { id: 4, x: 1, y: 1, stone: { id: 3, player_number: 2, chain_id: 2 } },
+        { id: 5, x: 2, y: 1, stone: nil },
+        { id: 6, x: 0, y: 2, stone: nil },
+        { id: 7, x: 1, y: 2, stone: nil },
+        { id: 8, x: 2, y: 2, stone: nil }
+      ])
+
+      dupped = point_set.dup
+      refute_equal point_set.object_id, dupped.object_id
+      assert_equal point_set.points, dupped.points
     end
   end
 end

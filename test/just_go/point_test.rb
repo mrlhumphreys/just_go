@@ -40,20 +40,36 @@ describe JustGo::Point do
   end
 
   describe '#as_json' do
-    it 'must return a hash of attributes' do
-      point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2})
-      result = point.as_json
-      expected = {
-        id: 1,
-        x: 2,
-        y: 3,
-        stone: {
+    describe 'with stone' do
+      it 'must return a hash of attributes' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2})
+        result = point.as_json
+        expected = {
           id: 1,
-          player_number: 2,
-          chain_id: nil
+          x: 2,
+          y: 3,
+          stone: {
+            id: 1,
+            player_number: 2,
+            chain_id: nil
+          }
         }
-      }
-      assert_equal expected, result
+        assert_equal expected, result
+      end
+    end
+
+    describe 'without stone' do
+      it 'must return a hash of attributes' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil)
+        result = point.as_json
+        expected = {
+          id: 1,
+          x: 2,
+          y: 3,
+          stone: nil 
+        }
+        assert_equal expected, result
+      end
     end
   end
 

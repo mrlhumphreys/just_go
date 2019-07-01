@@ -107,7 +107,8 @@ module JustGo
       _chains.any? { |c| liberties_for(c) == 1 }
     end
 
-    def update_joined_chains(point, player_number)
+    def update_joined_chains(point_id, player_number)
+      point = find_by_id(point_id)
       existing_chain_ids = adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.uniq
       existing_chains = chains(existing_chain_ids)
 
@@ -138,6 +139,42 @@ module JustGo
         player_number = p.stone && p.stone.player_number
         player_number ? player_number.to_s : '-'
       end.join
+    end
+
+    def place(point_id, stone)
+      point = find_by_id(point_id)
+      point.place(stone)
+    end
+
+    def next_stone_id
+      (occupied.map { |p| p.stone.id }.max || 0) + 1
+    end
+
+    def adjacent_chain_id(point, player_number)
+      adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.first
+    end
+
+    def next_chain_id
+      (occupied.map { |p| p.stone.chain_id }.max || 0) + 1
+    end
+
+    def build_stone(point, player_number)
+      JustGo::Stone.new(
+        id: next_stone_id,
+        player_number: player_number,
+        chain_id: adjacent_chain_id(point, player_number) || next_chain_id
+      )
+    end
+
+    def perform_move(point, player_number)
+      stone = build_stone(point, player_number)
+      place(point.id, stone)
+      update_joined_chains(point.id, player_number)
+      capture_stones(player_number)
+    end
+
+    def dup
+      self.class.new(points: as_json)
     end
   end
 end

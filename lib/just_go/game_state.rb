@@ -3,6 +3,7 @@ require 'just_go/errors/not_players_turn_error'
 require 'just_go/errors/point_not_empty_error'
 require 'just_go/errors/point_not_found_error'
 require 'just_go/errors/no_liberties_error'
+require 'just_go/errors/ko_rule_violation_error'
 
 module JustGo
   
@@ -72,44 +73,26 @@ module JustGo
       elsif points.liberties_for(point).zero? && points.deprives_liberties?(point, player_number) && !points.deprives_opponents_liberties?(point, player_number)
         @errors.push JustGo::NoLibertiesError.new
       else
-        @previous_state = points.minify
+        dupped = points.dup
+        dupped.perform_move(point, player_number)
 
-        stone = build_stone(point, player_number) 
-        point.place(stone)
+        if dupped.minify == @previous_state
+          @errors.push JustGo::KoRuleViolationError.new 
+        else
+          @previous_state = points.minify
 
-        points.update_joined_chains(point, player_number)
+          stone_count = points.perform_move(point, player_number)
 
-        stone_count = points.capture_stones(player_number)
-        prisoner_counts[player_number] += stone_count
+          @prisoner_counts[player_number] += stone_count
         
-        pass_turn
+          pass_turn
+        end
       end
       
       errors.empty?
     end 
 
     private
-
-    def build_stone(point, player_number)
-      JustGo::Stone.new(
-        id: next_id,
-        player_number: player_number,
-        chain_id: adjacent_chain_id(point, player_number) || next_chain_id
-      )
-    end
-
-    def next_id
-      (points.occupied.map { |p| p.stone.id }.max || 0) + 1
-    end
-
-    def adjacent_chain_id(point, player_number)
-      # similar to what's in PointSet#chains
-      points.adjacent(point).occupied_by(player_number).map { |p| p.stone.chain_id }.first
-    end
-
-    def next_chain_id
-      (points.occupied.map { |p| p.stone.chain_id }.max || 0) + 1
-    end
 
     def pass_turn
       @current_player_number = next_player_number 
