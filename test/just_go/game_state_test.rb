@@ -125,6 +125,40 @@ describe JustGo::GameState do
       end
     end
 
+    describe 'with other player passed' do
+      it 'clears the passed state' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 1,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil },
+            { id: 1, x: 1, y: 0, stone: nil },
+            { id: 2, x: 2, y: 0, stone: nil },
+            { id: 3, x: 0, y: 1, stone: nil },
+            { id: 4, x: 1, y: 1, stone: nil },
+            { id: 5, x: 2, y: 1, stone: nil },
+            { id: 6, x: 0, y: 2, stone: nil },
+            { id: 7, x: 1, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } },
+            { id: 8, x: 2, y: 2, stone: { id: 1, player_number: 1, chain_id: 1 } }
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          },
+          passed: {
+            1 => false,
+            2 => true
+          }
+        )
+        player_number = 1
+        other_player_number = 2
+        point_id = 4
+
+        game_state.move(player_number, point_id)
+
+        refute game_state.passed[other_player_number]
+      end
+    end
+
     describe 'with no stones on the board' do
       it 'must place a stone with id 1' do
         game_state = JustGo::GameState.new(
@@ -917,6 +951,117 @@ describe JustGo::GameState do
 
         refute result
       end
+    end
+  end
+
+  describe '#pass' do
+    before do
+      @game_state = JustGo::GameState.new(
+        current_player_number: 1,
+        points: [
+          { id: 0, x: 0, y: 0, stone: nil },
+          { id: 1, x: 1, y: 0, stone: nil },
+          { id: 2, x: 2, y: 0, stone: nil },
+
+          { id: 3, x: 3, y: 0, stone: nil },
+          { id: 4, x: 4, y: 0, stone: nil },
+          { id: 5, x: 0, y: 1, stone: nil },
+
+          { id: 6, x: 1, y: 1, stone: nil },
+          { id: 7, x: 2, y: 1, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 8, x: 3, y: 1, stone: { id: 5, player_number: 2, chain_id: 5 } },
+        ],
+        prisoner_counts: {
+          1 => 0,
+          2 => 0
+        },
+        previous_state: nil 
+      )
+      @player_number = 1 
+      @other_player_number = 2
+    end
+
+    describe 'when players turn' do
+      it 'records that the player has passed' do
+        @game_state.pass(@player_number)
+        assert @game_state.passed[@player_number]
+      end
+
+      it 'passes the turn' do
+        @game_state.pass(@player_number)
+        assert_equal @other_player_number, @game_state.current_player_number
+      end
+
+      it 'does not add error' do
+        @game_state.pass(@player_number)
+        error = @game_state.errors.first
+        refute error 
+      end
+
+      it 'returns true' do
+        result = @game_state.pass(@player_number)
+        assert result
+      end
+    end
+
+    describe 'when not players turn' do
+      it 'does not record that the player has passed' do
+        @game_state.pass(@other_player_number)
+        refute @game_state.passed[@other_player_number]
+
+      end
+
+      it 'does not pass the turn' do
+        @game_state.pass(@other_player_number)
+        assert_equal @player_number, @game_state.current_player_number
+      end
+
+      it 'adds error' do
+        @game_state.pass(@other_player_number)
+        error = @game_state.errors.first
+        assert_instance_of JustGo::NotPlayersTurnError, error
+      end
+
+      it 'returns false' do
+        result = @game_state.pass(@other_player_number)
+        refute result
+      end
+    end
+
+    describe 'when the other player has passed already' do
+      it 'must not pass turn' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 1,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil },
+            { id: 1, x: 1, y: 0, stone: nil },
+            { id: 2, x: 2, y: 0, stone: nil },
+
+            { id: 3, x: 3, y: 0, stone: nil },
+            { id: 4, x: 4, y: 0, stone: nil },
+            { id: 5, x: 0, y: 1, stone: nil },
+
+            { id: 6, x: 1, y: 1, stone: nil },
+            { id: 7, x: 2, y: 1, stone: { id: 1, player_number: 1, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: { id: 5, player_number: 2, chain_id: 5 } },
+          ],
+          prisoner_counts: {
+            1 => 0,
+            2 => 0
+          },
+          passed: {
+            1 => false,
+            2 => true
+          },
+          previous_state: nil 
+        )
+
+        player_number = 1 
+
+        game_state.pass(player_number)
+
+        assert_equal player_number, game_state.current_player_number
+      end 
     end
   end
 end

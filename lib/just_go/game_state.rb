@@ -13,11 +13,12 @@ module JustGo
   class GameState
     BOARD_SIZE = 19
 
-    def initialize(current_player_number: , points: , prisoner_counts: , previous_state: nil)
+    def initialize(current_player_number: , points: , prisoner_counts: , previous_state: nil, passed: { 0 => false, 1 => false })
       @current_player_number = current_player_number
       @points = JustGo::PointSet.new(points: points)
       @prisoner_counts = prisoner_counts
       @previous_state = previous_state
+      @passed = passed
       @errors = []
       @last_change = {}
     end
@@ -26,6 +27,7 @@ module JustGo
     attr_reader :points
     attr_reader :prisoner_counts
     attr_reader :previous_state
+    attr_reader :passed
     attr_reader :errors 
     attr_reader :last_change 
 
@@ -79,6 +81,8 @@ module JustGo
         if dupped.minify == @previous_state
           @errors.push JustGo::KoRuleViolationError.new 
         else
+          @passed[next_player_number] = false
+          
           @previous_state = points.minify
 
           stone_count = points.perform_move(point, player_number)
@@ -91,6 +95,17 @@ module JustGo
       
       errors.empty?
     end 
+
+    def pass(player_number)
+      if current_player_number != player_number
+        @errors.push JustGo::NotPlayersTurnError.new
+      else
+        @passed[player_number] = true
+        pass_turn unless @passed[next_player_number]
+      end
+
+      errors.empty?
+    end
 
     private
 
