@@ -11,6 +11,7 @@ describe JustGo::Point do
       assert_equal 2, point.x
       assert_equal 3, point.y
       assert_nil point.stone
+      assert_nil point.territory_id
     end
 
     it 'must handle a hash of stone' do
@@ -52,7 +53,8 @@ describe JustGo::Point do
             id: 1,
             player_number: 2,
             chain_id: nil
-          }
+          },
+          territory_id: nil
         }
         assert_equal expected, result
       end
@@ -66,7 +68,8 @@ describe JustGo::Point do
           id: 1,
           x: 2,
           y: 3,
-          stone: nil 
+          stone: nil,
+          territory_id: nil
         }
         assert_equal expected, result
       end
@@ -159,6 +162,38 @@ describe JustGo::Point do
         point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil)
         refute point.occupied_by?(1)
       end
+    end
+  end
+
+  describe '#unmarked?' do
+    describe 'a point without a territory' do
+      it 'must return true' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil, territory_id: nil)
+        assert point.unmarked?
+      end
+    end
+
+    describe 'a point with a territory' do
+      it 'must return false' do
+        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil, territory_id: 1)
+        refute point.unmarked?
+      end
+    end
+  end
+
+  describe '#add_to_territory' do
+    it 'must update the territory id' do
+      point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil, territory_id: nil)
+      point.add_to_territory(1)
+      assert_equal 1, point.territory_id
+    end
+  end
+
+  describe '#clear_territory' do
+    it 'must set territory to nil' do
+      point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: nil, territory_id: 7)
+      point.clear_territory
+      assert_nil point.territory_id
     end
   end
 end

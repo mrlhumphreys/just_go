@@ -1,5 +1,7 @@
 require 'forwardable'
 require 'just_go/point'
+require 'just_go/chain'
+require 'just_go/territory'
 
 module JustGo
 
@@ -26,7 +28,9 @@ module JustGo
 
     def_delegator :points, :find
     def_delegator :points, :map
+    def_delegator :points, :each
     def_delegator :points, :size
+    def_delegator :points, :all?
 
     def as_json
       points.map(&:as_json)
@@ -57,26 +61,51 @@ module JustGo
       select { |p| p.occupied_by_opponent?(player_number) }
     end
 
-    def adjacent(point_or_chain)
-      case point_or_chain
+    def adjacent(point_or_group)
+      case point_or_group
       when JustGo::Point
         select do |p| 
-          vector = Vector.new(point_or_chain, p)
+          vector = Vector.new(point_or_group, p)
           vector.orthogonal? && vector.magnitude == 1
         end
       when JustGo::Chain
-        _points = point_or_chain.points.map do |p|
+        _points = point_or_group.points.map do |p|
           adjacent(p).points
         end.flatten.reject do |p| 
-          point_or_chain.include?(p)
+          point_or_group.include?(p)
+        end.uniq do |p|
+          p.id
+        end
+
+        self.class.new(points: _points)
+      when JustGo::Territory
+        _points = point_or_group.points.map do |p|
+          adjacent(p).points
+        end.flatten.reject do |p| 
+          point_or_group.include?(p)
         end.uniq do |p|
           p.id
         end
 
         self.class.new(points: _points)
       else
-        raise ArgumentError, 'Must be Point or Chain'
+        raise ArgumentError, 'Must be Point or Chain or Territory'
       end
+    end
+
+    def where(args)
+      scope = self
+      args.each do |field, value|
+        scope = scope.select do |p| 
+          case value
+          when Array
+            value.include?(p.send(field))
+          else
+            p.send(field) == value 
+          end
+        end
+      end
+      scope
     end
 
     def chains(chain_ids=nil)
@@ -89,6 +118,22 @@ module JustGo
         all_chain_ids = select { |p| p.stone }.map { |p| p.stone.chain_id }.uniq 
         chains(all_chain_ids)
       end
+    end
+
+    def territories(territory_ids=nil)
+      if territory_ids
+        territory_ids.map do |t_id|
+          _points = select { |p| p.territory_id == t_id }.points
+          JustGo::Territory.new(points: _points)
+        end
+      else
+        all_territory_ids = select(&:territory_id).map(&:territory_id).uniq
+        territories(all_territory_ids)
+      end
+    end
+
+    def territories_for(player_number)
+      territories.select { |t| adjacent(t).all? { |p| p.occupied_by?(player_number) } }
     end
 
     def liberties_for(point_or_chain)
@@ -175,6 +220,29 @@ module JustGo
 
     def dup
       self.class.new(points: as_json)
+    end
+
+    def mark_territories
+      points.each(&:clear_territory)
+      points.each do |point|
+        if point.unoccupied? && point.unmarked?
+          territory_ids = adjacent(point).unoccupied.map(&:territory_id).compact
+          add_territory_id = case territory_ids.size
+          when 0
+            (points.map(&:territory_id).compact.max || 0) + 1 
+          when 1
+            territory_ids.first
+          else
+            min_id, *other_ids = territory_ids.sort
+            where(territory_id: other_ids).each do |other_point|
+              other_point.add_to_territory(min_id)
+            end
+            min_id 
+          end
+
+          point.add_to_territory(add_territory_id) 
+        end
+      end
     end
   end
 end

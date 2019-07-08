@@ -74,7 +74,7 @@ describe JustGo::PointSet do
       point_set = JustGo::PointSet.new(points: points)
       result = point_set.as_json
       expected = [
-        { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil } }
+        { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil }, territory_id: nil }
       ]
 
       assert_equal expected, result
@@ -199,6 +199,52 @@ describe JustGo::PointSet do
         assert_equal [0, 4, 6], result.points.map(&:id).sort
       end
     end
+
+    describe 'with a territory' do
+      it 'must return points next to and orthogonal to the territory' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+          { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+          { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+          { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+          { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+          { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+          { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+          { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+          { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+          { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+          { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+          { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+          { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+          { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+          { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+          { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+          { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+          { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+          { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+          { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+          { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+          { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+          { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+          { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+        ])
+
+        territory = JustGo::Territory.new(points: [
+          point_set.points.find { |p| p.id == 0 },  
+          point_set.points.find { |p| p.id == 1 },  
+          point_set.points.find { |p| p.id == 5 }  
+        ])
+
+        result = point_set.adjacent(territory)
+
+        assert_equal [2, 6, 10], result.points.map(&:id).sort
+      end
+    end
   end
 
   describe '#occupied_by' do
@@ -229,6 +275,39 @@ describe JustGo::PointSet do
       result = point_set.occupied_by_opponent(player_number)
 
       assert result.points.all? { |p| p.stone.player_number == opponent_number }
+    end
+  end
+
+  describe '#where' do
+    describe 'with single value' do
+      it 'must filter based on conditions' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+          { id: 2, x: 2, y: 0, stone: { id: 2, player_number: 2, chain_id: 2 } }
+        ])
+
+        result = point_set.where(territory_id: 1)
+
+        assert_equal 1, result.size
+        assert_equal 1, result.points.first.id
+      end
+    end
+
+    describe 'with multiple value' do
+      it 'must return all the ones matching' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+          { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+          { id: 2, x: 2, y: 0, stone: nil, territory_id: 2 }
+        ])
+
+        result = point_set.where(territory_id: [1, 2])
+
+        assert_equal 2, result.points.size
+        assert_equal 1, result.points.first.id
+        assert_equal 2, result.points.last.id
+      end
     end
   end
 
@@ -275,6 +354,92 @@ describe JustGo::PointSet do
         assert_equal 2, result.size
         assert result.all? { |c| c.is_a?(JustGo::Chain) }
       end
+    end
+  end
+
+  describe '#territories' do
+    it 'must return points grouped by territory_id' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+        { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+        { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+        { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+        { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+        { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+        { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+        { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+        { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+        { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+        { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+        { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+        { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+        { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+        { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+        { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+        { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+        { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+        { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+        { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+        { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+        { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+        { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+        { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+      ])
+
+      result = point_set.territories
+
+      assert_equal 5, result.size
+      assert_instance_of JustGo::Territory, result.first
+      assert_equal 3, result.first.points.size
+    end
+  end
+
+  describe '#territories_for' do
+    it 'must return territories for that player' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+        { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+        { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+        { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+        { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+        { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+        { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+        { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+        { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+        { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+        { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+        { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+        { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+        { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+        { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+        { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+        { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+        { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+        { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+        { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+        { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+        { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+        { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+        { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+        { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+      ])
+      player_number = 1
+
+      territories = point_set.territories_for(player_number)
+      territory = territories.first
+
+      assert_equal 1, territories.size
+      assert_instance_of JustGo::Territory, territory
+      assert_equal 3, territory.points.size
     end
   end
 
@@ -711,6 +876,60 @@ describe JustGo::PointSet do
       dupped = point_set.dup
       refute_equal point_set.object_id, dupped.object_id
       assert_equal point_set.points, dupped.points
+    end
+  end
+
+  describe '#mark_territories' do
+    describe 'with empty points surrounded by both players and no players' do
+      it 'clears existing territory ids and groups empty points into territories' do
+        point_set = JustGo::PointSet.new(points: [
+          { id: 0, x: 0, y: 0, stone: nil, territory_id: 7 },
+          { id: 1, x: 1, y: 0, stone: nil, territory_id: 7 },
+          { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 }, territory_id: 7 },
+          { id: 3, x: 3, y: 0, stone: nil, territory_id: 7 },
+          { id: 4, x: 4, y: 0, stone: nil, territory_id: 7 },
+
+          { id: 5, x: 0, y: 1, stone: nil, territory_id: 7 },
+          { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 }, territory_id: 7 },
+          { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 }, territory_id: 7 },
+          { id: 8, x: 3, y: 1, stone: nil, territory_id: 7 },
+          { id: 9, x: 4, y: 1, stone: nil, territory_id: 7 },
+
+          { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 }, territory_id: 7 },
+          { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 }, territory_id: 7 },
+          { id: 12, x: 2, y: 2, stone: nil, territory_id: 7 },
+          { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 }, territory_id: 7 },
+          { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 }, territory_id: 7 },
+
+          { id: 15, x: 0, y: 3, stone: nil, territory_id: 7 },
+          { id: 16, x: 1, y: 3, stone: nil, territory_id: 7 },
+          { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 }, territory_id: 7 },
+          { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 }, territory_id: 7 },
+          { id: 19, x: 4, y: 3, stone: nil, territory_id: 7 },
+
+          { id: 20, x: 0, y: 4, stone: nil, territory_id: 7 },
+          { id: 21, x: 1, y: 4, stone: nil, territory_id: 7 },
+          { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 }, territory_id: 7 },
+          { id: 23, x: 3, y: 4, stone: nil, territory_id: 7 },
+          { id: 24, x: 4, y: 4, stone: nil, territory_id: 7 }
+        ])
+
+        point_set.mark_territories
+
+        territory_count_one = point_set.points.select { |p| p.territory_id == 1 }.size 
+        territory_count_two = point_set.points.select { |p| p.territory_id == 2 }.size
+        territory_count_three = point_set.points.select { |p| p.territory_id == 3 }.size
+        territory_count_four = point_set.points.select { |p| p.territory_id == 4 }.size
+        territory_count_five = point_set.points.select { |p| p.territory_id == 5 }.size 
+        territory_count_seven = point_set.points.select { |p| p.territory_id == 7 }.size 
+
+        assert_equal 3, territory_count_one
+        assert_equal 4, territory_count_two
+        assert_equal 1, territory_count_three
+        assert_equal 4, territory_count_four
+        assert_equal 3, territory_count_five
+        assert_equal 0, territory_count_seven
+      end
     end
   end
 end

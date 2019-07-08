@@ -40,7 +40,7 @@ module JustGo
               id: row*BOARD_SIZE + col, 
               x: col, 
               y: row, 
-              stone: nil 
+              stone: nil
             }
           end
         end.flatten,
@@ -101,13 +101,32 @@ module JustGo
         @errors.push JustGo::NotPlayersTurnError.new
       else
         @passed[player_number] = true
-        pass_turn unless @passed[next_player_number]
+        if @passed[next_player_number]
+          points.mark_territories
+        else
+          pass_turn
+        end
       end
 
       errors.empty?
     end
 
+    def score
+      {
+        1 => player_score(1),
+        2 => player_score(2) 
+      }
+    end
+
     private
+
+    def player_score(player_number)
+      @prisoner_counts[player_number] + territory_count(player_number) 
+    end
+
+    def territory_count(player_number)
+      points.territories_for(player_number).sum(&:size)
+    end
 
     def pass_turn
       @current_player_number = next_player_number 

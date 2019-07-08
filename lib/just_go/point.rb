@@ -6,7 +6,7 @@ module JustGo
   #
   # A Point on a go board
   class Point
-    def initialize(id: , x: , y: , stone: )
+    def initialize(id: , x: , y: , stone: , territory_id: nil)
       @id = id
       @x = x
       @y = y
@@ -20,12 +20,14 @@ module JustGo
         else
           raise ArgumentError, "stone must be Stone, Hash or nil"
         end
+      @territory_id = territory_id
     end
 
     attr_reader :id
     attr_reader :x
     attr_reader :y
     attr_reader :stone
+    attr_reader :territory_id
 
     def as_json
       _stone = stone ? stone.as_json : nil
@@ -33,7 +35,8 @@ module JustGo
         id: id,
         x: x,
         y: y,
-        stone: _stone
+        stone: _stone,
+        territory_id: territory_id
       }
     end
 
@@ -57,12 +60,24 @@ module JustGo
       !stone.nil? && stone.player_number != player_number
     end
 
-    def place(stone)
-      @stone = stone
+    def unmarked?
+      territory_id.nil?
+    end
+
+    def place(s)
+      @stone = s
     end
 
     def capture_stone
       @stone = nil
+    end
+
+    def add_to_territory(t_id)
+      @territory_id = t_id
+    end
+
+    def clear_territory
+      @territory_id = nil
     end
   end
 end

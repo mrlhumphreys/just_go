@@ -60,13 +60,13 @@ describe JustGo::GameState do
       expected = {
         current_player_number: 1,
         points: [
-          { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil } }
+          { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil }, territory_id: nil }
         ],
         prisoner_counts: {
           1 => 0,
           2 => 0
         },
-        previous_state: nil
+        previous_state: nil,
       }
       assert_equal expected, result
     end
@@ -1008,7 +1008,6 @@ describe JustGo::GameState do
       it 'does not record that the player has passed' do
         @game_state.pass(@other_player_number)
         refute @game_state.passed[@other_player_number]
-
       end
 
       it 'does not pass the turn' do
@@ -1029,8 +1028,8 @@ describe JustGo::GameState do
     end
 
     describe 'when the other player has passed already' do
-      it 'must not pass turn' do
-        game_state = JustGo::GameState.new(
+      before do
+        @game_state = JustGo::GameState.new(
           current_player_number: 1,
           points: [
             { id: 0, x: 0, y: 0, stone: nil },
@@ -1056,12 +1055,69 @@ describe JustGo::GameState do
           previous_state: nil 
         )
 
-        player_number = 1 
+        @player_number = 1 
+      end
 
-        game_state.pass(player_number)
+      it 'must not pass turn' do
+        @game_state.pass(@player_number)
 
-        assert_equal player_number, game_state.current_player_number
+        assert_equal @player_number, @game_state.current_player_number
       end 
+
+      it 'must mark territory' do
+        @game_state.pass(@player_number)
+
+        assert @game_state.points.points.any?(&:territory_id)
+      end
+    end
+  end
+
+  describe '#score' do
+    describe 'with territory on the edge' do
+      it 'counts the territory in the score' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+            { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+            { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+            { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+            { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+            { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+            { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+            { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+            { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+            { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+            { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+            { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+            { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+            { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+            { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+            { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+            { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+            { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+            { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+            { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+            { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+            { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+            { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+            { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+          ],
+          prisoner_counts: {
+            1 => 4,
+            2 => 2 
+          },
+          previous_state: nil 
+        )
+
+        result = game_state.score
+        assert_equal({ 1 => 7, 2 => 5 }, result)
+      end
     end
   end
 end
