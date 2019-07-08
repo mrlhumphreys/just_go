@@ -118,6 +118,14 @@ module JustGo
       }
     end
 
+    def winner
+      if @passed.values.all?
+        score.max_by { |_player, score| score }.first
+      else
+        nil
+      end
+    end
+
     private
 
     def player_score(player_number)

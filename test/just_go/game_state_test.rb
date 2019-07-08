@@ -1120,4 +1120,106 @@ describe JustGo::GameState do
       end
     end
   end
+
+  describe '#winner' do
+    describe 'when both players have passed' do
+      it 'must return the player with the highest score' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+            { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+            { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+            { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+            { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+            { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+            { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+            { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+            { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+            { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+            { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+            { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+            { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+            { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+            { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+            { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+            { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+            { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+            { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+            { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+            { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+            { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+            { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+            { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+          ],
+          prisoner_counts: {
+            1 => 4,
+            2 => 2 
+          },
+          passed: {
+            1 => true,
+            2 => true
+          },
+          previous_state: nil 
+        )
+
+        assert_equal 1, game_state.winner
+      end
+    end
+
+    describe 'when both players have not passed' do
+      it 'must return nil' do
+        game_state = JustGo::GameState.new(
+          current_player_number: 2,
+          points: [
+            { id: 0, x: 0, y: 0, stone: nil, territory_id: 1 },
+            { id: 1, x: 1, y: 0, stone: nil, territory_id: 1 },
+            { id: 2, x: 2, y: 0, stone: { id: 1, player_number: 1, chain_id: 1 } },
+            { id: 3, x: 3, y: 0, stone: nil, territory_id: 2 },
+            { id: 4, x: 4, y: 0, stone: nil, territory_id: 2 },
+
+            { id: 5, x: 0, y: 1, stone: nil, territory_id: 1 },
+            { id: 6, x: 1, y: 1, stone: { id: 2, player_number: 1, chain_id: 1 } },
+            { id: 7, x: 2, y: 1, stone: { id: 3, player_number: 1, chain_id: 1 } },
+            { id: 8, x: 3, y: 1, stone: nil, territory_id: 2 },
+            { id: 9, x: 4, y: 1, stone: nil, territory_id: 2 },
+
+            { id: 10, x: 0, y: 2, stone: { id: 4, player_number: 1, chain_id: 1 } },
+            { id: 11, x: 1, y: 2, stone: { id: 5, player_number: 1, chain_id: 1 } },
+            { id: 12, x: 2, y: 2, stone: nil, territory_id: 3 },
+            { id: 13, x: 3, y: 2, stone: { id: 6, player_number: 2, chain_id: 2 } },
+            { id: 14, x: 4, y: 2, stone: { id: 7, player_number: 2, chain_id: 2 } },
+
+            { id: 15, x: 0, y: 3, stone: nil, territory_id: 4 },
+            { id: 16, x: 1, y: 3, stone: nil, territory_id: 4 },
+            { id: 17, x: 2, y: 3, stone: { id: 8, player_number: 2, chain_id: 2 } },
+            { id: 18, x: 3, y: 3, stone: { id: 9, player_number: 2, chain_id: 2 } },
+            { id: 19, x: 4, y: 3, stone: nil, territory_id: 5 },
+
+            { id: 20, x: 0, y: 4, stone: nil, territory_id: 4 },
+            { id: 21, x: 1, y: 4, stone: nil, territory_id: 4 },
+            { id: 22, x: 2, y: 4, stone: { id: 10, player_number: 2, chain_id: 2 } },
+            { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
+            { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
+          ],
+          prisoner_counts: {
+            1 => 4,
+            2 => 2 
+          },
+          passed: {
+            1 => true,
+            2 => false 
+          },
+          previous_state: nil 
+        )
+
+        assert_nil game_state.winner
+      end
+    end
+  end
 end
