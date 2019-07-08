@@ -29,7 +29,13 @@ To start, a new game can be instantiated with the default state:
 Moves can be made by passing in the player number and the id of the point. It will return true if the move is valid, otherwise it will return false.
 
 ```ruby
-  game_state.move(1, 63);
+  game_state.move(1, 63)
+```
+
+Players can pass turn with the pass method, passing in the player number.
+
+```ruby
+  game_state.pass(1)
 ```
 
 The last change with all its details are found in the `last_change` attribute.
@@ -44,10 +50,16 @@ If something happens, errors may be found in the errors attribute
   game_state.errors
 ```
 
-THe winner can be found by calling winner on the object
+The winner can be found by calling winner on the object
 
 ```ruby
   game_state.winner
+```
+
+The score can be obtained through the score method
+
+```ruby
+  game_state.score
 ```
 
 Also, the game can be serialized into a hash.
