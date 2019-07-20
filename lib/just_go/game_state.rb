@@ -44,10 +44,10 @@ module JustGo
             }
           end
         end.flatten,
-        prisoner_counts: { 
-          1 => 0,
-          2 => 0,
-        },
+        prisoner_counts: [ 
+          { player_number: 1, count: 0 },
+          { player_number: 2, count: 0 },
+        ],
         previous_state: nil
       )
     end
@@ -87,8 +87,8 @@ module JustGo
 
           stone_count = points.perform_move(point, player_number)
 
-          @prisoner_counts[player_number] += stone_count
-        
+          @prisoner_counts.detect { |pc| pc[:player_number] == player_number }[:count] += stone_count
+
           pass_turn
         end
       end
@@ -129,7 +129,11 @@ module JustGo
     private
 
     def player_score(player_number)
-      @prisoner_counts[player_number] + territory_count(player_number) 
+      prisoner_count(player_number) + territory_count(player_number) 
+    end
+
+    def prisoner_count(player_number)
+      prisoner_counts.detect { |pc| pc[:player_number] == player_number }[:count]
     end
 
     def territory_count(player_number)
