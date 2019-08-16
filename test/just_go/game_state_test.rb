@@ -11,20 +11,27 @@ describe JustGo::GameState do
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }
         ],
-        prisoner_counts: [ 
-          { player_number: 1, count: 0 },
-          { player_number: 2, count: 0 }
+        player_stats: [ 
+          { player_number: 1, passed: false, prisoner_count: 0 },
+          { player_number: 2, passed: false, prisoner_count: 0 }
         ],
         previous_state: "w"
       )
       assert_equal 1, game_state.current_player_number
       assert_instance_of JustGo::PointSet, game_state.points
-      assert_instance_of Array, game_state.prisoner_counts
+      assert_instance_of Array, game_state.player_stats
       assert_equal "w", game_state.previous_state
     end
 
     it 'must default errors and last_change' do
-      game_state = JustGo::GameState.new(current_player_number: 1, points: [], prisoner_counts: { 1 => 0, 2 => 0 })
+      game_state = JustGo::GameState.new(
+        current_player_number: 1, 
+        points: [], 
+        player_stats: [
+          { player_number: 1, prisoner_count: 0, passed: false },
+          { player_number: 2, prisoner_count: 1, passed: false }
+        ]
+      )
       assert_equal [], game_state.errors
       assert_equal({}, game_state.last_change)
     end
@@ -40,7 +47,7 @@ describe JustGo::GameState do
       assert_equal 19, points.map(&:x).uniq.size
       assert_equal 19, points.map(&:y).uniq.size
       assert points.map(&:stone).all?(&:nil?)
-      assert_equal([ { player_number: 1, count: 0}, { player_number: 2, count: 0}], game_state.prisoner_counts)
+      assert_equal([ { player_number: 1, passed: false, prisoner_count: 0}, { player_number: 2, passed: false, prisoner_count: 0}], game_state.player_stats)
     end
   end
 
@@ -51,9 +58,9 @@ describe JustGo::GameState do
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }
         ],
-        prisoner_counts: [ 
-          { player_number: 1, count: 0 },
-          { player_number: 2, count: 0 }
+        player_stats: [
+          { player_number: 1, prisoner_count: 0, passed: false },
+          { player_number: 2, prisoner_count: 0, passed: false }
         ]
       )
       result = game_state.as_json
@@ -62,11 +69,11 @@ describe JustGo::GameState do
         points: [
           { id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2, chain_id: nil }, territory_id: nil }
         ],
-        prisoner_counts: [ 
-          { player_number: 1, count: 0 },
-          { player_number: 2, count: 0 }
-        ],
         previous_state: nil,
+        player_stats: [
+          { player_number: 1, prisoner_count: 0, passed: false },
+          { player_number: 2, prisoner_count: 0, passed: false }
+        ]
       }
       assert_equal expected, result
     end
@@ -88,9 +95,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } },
             { id: 8, x: 2, y: 2, stone: { id: 1, player_number: 1, chain_id: 1 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
         @player_number = 1
@@ -140,14 +147,10 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } },
             { id: 8, x: 2, y: 2, stone: { id: 1, player_number: 1, chain_id: 1 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
-          ],
-          passed: {
-            1 => false,
-            2 => true
-          }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: true }
+          ] 
         )
         player_number = 1
         other_player_number = 2
@@ -155,7 +158,7 @@ describe JustGo::GameState do
 
         game_state.move(player_number, point_id)
 
-        refute game_state.passed[other_player_number]
+        refute game_state.player_stats.detect { |ps| ps[:player_number] == other_player_number }[:passed]
       end
     end
 
@@ -174,9 +177,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -200,9 +203,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -228,9 +231,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -256,9 +259,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -284,9 +287,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -313,9 +316,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: { id: 2, player_number: 2, chain_id: 2 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -342,9 +345,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 0 }
           ]
         ) 
         @player_number = 1
@@ -395,7 +398,7 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
+          player_stats: [ 
             { player_number: 1, count: 0 },
             { player_number: 2, count: 1 }
           ]
@@ -449,9 +452,9 @@ describe JustGo::GameState do
             { id: 7, x: 1, y: 2, stone: nil },
             { id: 8, x: 2, y: 2, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 0 }
           ]
         )
         @player_number = 2 
@@ -514,9 +517,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil },
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 0 }
           ]
         )
         @player_number = 2 
@@ -587,9 +590,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 0 }
           ]
         )
 
@@ -661,9 +664,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -735,9 +738,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: { id: 23, player_number: 1, chain_id: 1 } },
             { id: 24, x: 4, y: 4, stone: { id: 24, player_number: 1, chain_id: 1 } }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -809,9 +812,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -860,9 +863,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: false }
           ]
         )
 
@@ -881,7 +884,7 @@ describe JustGo::GameState do
       it 'increments prisoner_counts' do
         @game_state.move(@player_number, @point_id)
 
-        prisoner_count = @game_state.prisoner_counts.detect { |pc| pc[:player_number] == 2 }[:count]
+        prisoner_count = @game_state.player_stats.detect { |pc| pc[:player_number] == 2 }[:prisoner_count]
 
         assert_equal 1, prisoner_count 
       end
@@ -922,9 +925,9 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil },
             { id: 24, x: 4, y: 4, stone: nil }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 0 }
           ],
           previous_state: '-------12--12-2--12------' 
         )
@@ -973,11 +976,11 @@ describe JustGo::GameState do
           { id: 7, x: 2, y: 1, stone: { id: 1, player_number: 1, chain_id: 1 } },
           { id: 8, x: 3, y: 1, stone: { id: 5, player_number: 2, chain_id: 5 } },
         ],
-        prisoner_counts: [ 
-          { player_number: 1, count: 0 },
-          { player_number: 2, count: 0 }
-        ],
-        previous_state: nil 
+        previous_state: nil,
+        player_stats: [ 
+          { player_number: 1, prisoner_count: 0, passed: false },
+          { player_number: 2, prisoner_count: 0, passed: false }
+        ]
       )
       @player_number = 1 
       @other_player_number = 2
@@ -986,7 +989,7 @@ describe JustGo::GameState do
     describe 'when players turn' do
       it 'records that the player has passed' do
         @game_state.pass(@player_number)
-        assert @game_state.passed[@player_number]
+        assert @game_state.player_stats.detect { |ps| ps[:player_number] == @player_number }[:passed]
       end
 
       it 'passes the turn' do
@@ -1009,7 +1012,7 @@ describe JustGo::GameState do
     describe 'when not players turn' do
       it 'does not record that the player has passed' do
         @game_state.pass(@other_player_number)
-        refute @game_state.passed[@other_player_number]
+        refute @game_state.player_stats.detect { |ps| ps[:player_number] == @other_player_number }[:passed]
       end
 
       it 'does not pass the turn' do
@@ -1046,14 +1049,10 @@ describe JustGo::GameState do
             { id: 7, x: 2, y: 1, stone: { id: 1, player_number: 1, chain_id: 1 } },
             { id: 8, x: 3, y: 1, stone: { id: 5, player_number: 2, chain_id: 5 } },
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 0 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 0, passed: false },
+            { player_number: 2, prisoner_count: 0, passed: true }
           ],
-          passed: {
-            1 => false,
-            2 => true
-          },
           previous_state: nil 
         )
 
@@ -1110,11 +1109,11 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
             { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 4 },
-            { player_number: 2, count: 2 }
-          ],
-          previous_state: nil 
+          previous_state: nil,
+          player_stats: [ 
+            { player_number: 1, passed: false, prisoner_count: 4 },
+            { player_number: 2, passed: false, prisoner_count: 2 }
+          ]
         )
 
         result = game_state.score
@@ -1159,14 +1158,10 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
             { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 4 },
-            { player_number: 2, count: 2 }
+          player_stats: [ 
+            { player_number: 1, prisoner_count: 4, passed: true },
+            { player_number: 2, prisoner_count: 2, passed: true }
           ],
-          passed: {
-            1 => true,
-            2 => true
-          },
           previous_state: nil 
         )
 
@@ -1209,14 +1204,10 @@ describe JustGo::GameState do
             { id: 23, x: 3, y: 4, stone: nil, territory_id: 5 },
             { id: 24, x: 4, y: 4, stone: nil, territory_id: 5 }
           ],
-          prisoner_counts: [ 
-            { player_number: 1, count: 4 },
-            { player_number: 2, count: 2 }
+          player_stats: [ 
+            { player_number: 1, passed: true, prisoner_count: 4 },
+            { player_number: 2, passed: false, prisoner_count: 2 }
           ],
-          passed: {
-            1 => true,
-            2 => false 
-          },
           previous_state: nil 
         )
 
