@@ -47,7 +47,12 @@ describe JustGo::GameState do
       assert_equal 19, points.map(&:x).uniq.size
       assert_equal 19, points.map(&:y).uniq.size
       assert points.map(&:stone).all?(&:nil?)
-      assert_equal([ { player_number: 1, passed: false, prisoner_count: 0}, { player_number: 2, passed: false, prisoner_count: 0}], game_state.player_stats)
+      assert_equal 1, game_state.player_stats.first.player_number
+      assert_equal 0, game_state.player_stats.first.prisoner_count
+      refute game_state.player_stats.first.passed
+      assert_equal 2, game_state.player_stats.last.player_number
+      assert_equal 0, game_state.player_stats.last.prisoner_count
+      refute game_state.player_stats.last.passed
     end
   end
 
@@ -158,7 +163,7 @@ describe JustGo::GameState do
 
         game_state.move(player_number, point_id)
 
-        refute game_state.player_stats.detect { |ps| ps[:player_number] == other_player_number }[:passed]
+        refute game_state.player_stats.detect { |ps| ps.player_number == other_player_number }.passed
       end
     end
 
@@ -399,8 +404,8 @@ describe JustGo::GameState do
             { id: 8, x: 2, y: 2, stone: nil }
           ],
           player_stats: [ 
-            { player_number: 1, count: 0 },
-            { player_number: 2, count: 1 }
+            { player_number: 1, passed: false, prisoner_count: 0 },
+            { player_number: 2, passed: false, prisoner_count: 1 }
           ]
         )
         @player_number = 2 
@@ -884,7 +889,7 @@ describe JustGo::GameState do
       it 'increments prisoner_counts' do
         @game_state.move(@player_number, @point_id)
 
-        prisoner_count = @game_state.player_stats.detect { |pc| pc[:player_number] == 2 }[:prisoner_count]
+        prisoner_count = @game_state.player_stats.detect { |ps| ps.player_number == 2 }.prisoner_count
 
         assert_equal 1, prisoner_count 
       end
@@ -989,7 +994,7 @@ describe JustGo::GameState do
     describe 'when players turn' do
       it 'records that the player has passed' do
         @game_state.pass(@player_number)
-        assert @game_state.player_stats.detect { |ps| ps[:player_number] == @player_number }[:passed]
+        assert @game_state.player_stats.detect { |ps| ps.player_number == @player_number }.passed
       end
 
       it 'passes the turn' do
@@ -1012,7 +1017,7 @@ describe JustGo::GameState do
     describe 'when not players turn' do
       it 'does not record that the player has passed' do
         @game_state.pass(@other_player_number)
-        refute @game_state.player_stats.detect { |ps| ps[:player_number] == @other_player_number }[:passed]
+        refute @game_state.player_stats.detect { |ps| ps.player_number == @other_player_number }.passed
       end
 
       it 'does not pass the turn' do

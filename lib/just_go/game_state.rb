@@ -1,4 +1,5 @@
 require 'just_go/point_set'
+require 'just_go/player_stat'
 require 'just_go/errors/not_players_turn_error'
 require 'just_go/errors/point_not_empty_error'
 require 'just_go/errors/point_not_found_error'
@@ -13,11 +14,11 @@ module JustGo
   class GameState
     BOARD_SIZE = 19
 
-    def initialize(current_player_number: , points: , previous_state: nil, player_stats: nil)
+    def initialize(current_player_number: , points: , previous_state: nil, player_stats: [])
       @current_player_number = current_player_number
       @points = JustGo::PointSet.new(points: points)
       @previous_state = previous_state
-      @player_stats = player_stats
+      @player_stats = player_stats.map { |ps| JustGo::PlayerStat.new(ps) }
       @errors = []
       @last_change = {}
     end
@@ -55,7 +56,7 @@ module JustGo
         current_player_number: current_player_number,
         points: points.as_json,
         previous_state: previous_state,
-        player_stats: player_stats
+        player_stats: player_stats.map(&:as_json)
       }
     end
 
@@ -79,13 +80,13 @@ module JustGo
         if dupped.minify == @previous_state
           @errors.push JustGo::KoRuleViolationError.new 
         else
-          @player_stats.detect { |p| p[:player_number] == next_player_number }[:passed] = false 
+          @player_stats.detect { |p| p.player_number == next_player_number }.mark_as_continuing 
           
           @previous_state = points.minify
 
           stone_count = points.perform_move(point, player_number)
 
-          @player_stats.detect { |pc| pc[:player_number] == player_number }[:prisoner_count] += stone_count
+          @player_stats.detect { |pc| pc.player_number == player_number }.add_to_prisoner_count(stone_count)
 
           pass_turn
         end
@@ -98,8 +99,8 @@ module JustGo
       if current_player_number != player_number
         @errors.push JustGo::NotPlayersTurnError.new
       else
-        @player_stats.detect { |p| p[:player_number] == player_number }[:passed] = true 
-        next_player_passed = @player_stats.detect { |p| p[:player_number] == next_player_number }[:passed] 
+        @player_stats.detect { |ps| ps.player_number == player_number }.mark_as_passed 
+        next_player_passed = @player_stats.detect { |ps| ps.player_number == next_player_number }.passed 
         if next_player_passed 
           points.mark_territories
         else
@@ -118,7 +119,7 @@ module JustGo
     end
 
     def winner
-      if @player_stats.map { |ps| ps[:passed] }.all?
+      if @player_stats.map { |ps| ps.passed }.all?
         score.max_by { |_player, score| score }.first
       else
         nil
@@ -132,7 +133,7 @@ module JustGo
     end
 
     def prisoner_count(player_number)
-      player_stats.detect { |pc| pc[:player_number] == player_number }[:prisoner_count]
+      player_stats.detect { |ps| ps.player_number == player_number }.prisoner_count
     end
 
     def territory_count(player_number)
