@@ -1122,7 +1122,11 @@ describe JustGo::GameState do
         )
 
         result = game_state.score
-        assert_equal({ 1 => 7, 2 => 5 }, result)
+        expected = [
+          { player_number: 1, score: 7 },
+          { player_number: 2, score: 5 }
+        ]
+        assert_equal(expected, result)
       end
     end
   end

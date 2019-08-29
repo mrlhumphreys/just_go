@@ -112,15 +112,15 @@ module JustGo
     end
 
     def score
-      {
-        1 => player_score(1),
-        2 => player_score(2) 
-      }
+      [
+        { player_number: 1, score: player_score(1) },
+        { player_number: 2, score: player_score(2) }
+      ]
     end
 
     def winner
       if @player_stats.map { |ps| ps.passed }.all?
-        score.max_by { |_player, score| score }.first
+        score.max_by { |line| line[:score] }[:player_number]
       else
         nil
       end
