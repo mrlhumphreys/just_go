@@ -4,3 +4,5 @@ require "just_go/version"
 module JustGo
 
 end
+
+require 'just_go/game_state'
