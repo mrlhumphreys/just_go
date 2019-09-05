@@ -63,7 +63,7 @@ module JustGo
     def move(player_number, point_id)
       @errors = []
 
-      point = points.find_by_id(point_id)
+      point = points.find_by_id(point_id.to_i)
 
       if current_player_number != player_number
         @errors.push JustGo::NotPlayersTurnError.new
