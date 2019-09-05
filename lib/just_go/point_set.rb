@@ -1,4 +1,5 @@
 require 'forwardable'
+require 'just_go/vector'
 require 'just_go/point'
 require 'just_go/chain'
 require 'just_go/territory'
@@ -65,7 +66,7 @@ module JustGo
       case point_or_group
       when JustGo::Point
         select do |p| 
-          vector = Vector.new(point_or_group, p)
+          vector = JustGo::Vector.new(point_or_group, p)
           vector.orthogonal? && vector.magnitude == 1
         end
       when JustGo::Chain
