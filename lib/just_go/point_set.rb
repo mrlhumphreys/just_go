@@ -46,6 +46,10 @@ module JustGo
       find { |p| p.id == point_id }
     end
 
+    def find_by_x_and_y(x, y)
+      find { |p| p.x == x && p.y == y }
+    end
+
     def occupied
       select(&:occupied?)
     end

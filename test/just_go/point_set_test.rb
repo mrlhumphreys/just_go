@@ -97,6 +97,24 @@ describe JustGo::PointSet do
     end
   end
 
+  describe 'find_by_x_and_by' do
+    it 'returns a point matching the id' do
+      point_set = JustGo::PointSet.new(points: [
+        { id: 0, x: 0, y: 0, stone: nil },
+        { id: 1, x: 1, y: 0, stone: nil },
+        { id: 2, x: 2, y: 0, stone: nil }
+      ])
+      x = 1
+      y = 0 
+
+      point = point_set.find_by_x_and_y(x, y)
+
+      assert_instance_of JustGo::Point, point
+      assert_equal x, point.x 
+      assert_equal y, point.y 
+    end
+  end
+
   describe '#occupied' do
     it 'must return points where stone is not nil' do
       point_set = JustGo::PointSet.new(points: [
