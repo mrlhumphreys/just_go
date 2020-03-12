@@ -34,7 +34,7 @@ describe JustGo::PointSet do
     end
 
     it 'must handle array of points' do
-      points = [JustGo::Point.new({ id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } })]
+      points = [JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 })]
       point_set = JustGo::PointSet.new(points: points)
       first_point = point_set.points.first
 
@@ -61,10 +61,9 @@ describe JustGo::PointSet do
 
     it 'must raise error for array of mixed valid elements' do
       assert_raises ArgumentError do
-        points = [JustGo::Point.new({ id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } }), { id: 4, x: 5, y: 7, stone: nil}]
-        point_set = JustGo::PointSet.new(points: points)
+        points = [JustGo::Point.new(id: 1, x: 2, y: 3, stone: { id: 1, player_number: 2 } ), { id: 4, x: 5, y: 7, stone: nil}]
+        JustGo::PointSet.new(points: points)
       end
-
     end
   end
 
@@ -366,7 +365,6 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 2, chain_id: 2 } }
         ])
 
-        chain_id = 1
         result = point_set.chains
 
         assert_equal 2, result.size
@@ -476,7 +474,6 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 1 } }
         ])
         point = point_set.points.find { |p| p.id == 4 } 
-        player_number = 2
 
         result = point_set.liberties_for(point)
 
@@ -498,7 +495,6 @@ describe JustGo::PointSet do
           { id: 8, x: 2, y: 2, stone: { id: 8, player_number: 1, chain_id: 1 } }
         ])
         point = point_set.points.find { |p| p.id == 4 } 
-        player_number = 2
 
         result = point_set.liberties_for(point)
 

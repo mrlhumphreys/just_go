@@ -14,7 +14,7 @@ module JustGo
         when JustGo::Stone
           stone
         when Hash
-          JustGo::Stone.new(stone)
+          JustGo::Stone.new(**stone)
         when nil 
           stone
         else

@@ -35,7 +35,7 @@ describe JustGo::Point do
 
     it 'must raise error when stone is not hash stone or nil' do
       assert_raises ArgumentError do
-        point = JustGo::Point.new(id: 1, x: 2, y: 3, stone: 4)
+        JustGo::Point.new(id: 1, x: 2, y: 3, stone: 4)
       end
     end
   end

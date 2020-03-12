@@ -17,7 +17,7 @@ module JustGo
         when !points.is_a?(Array)
           raise ArgumentError, 'points must be an array of Hash or Point'
         when points.all? { |p| p.is_a?(Hash) } 
-          points.map { |p| JustGo::Point.new(p) }
+          points.map { |p| JustGo::Point.new(**p) }
         when points.all? { |p| p.is_a?(JustGo::Point) }
           points
         else

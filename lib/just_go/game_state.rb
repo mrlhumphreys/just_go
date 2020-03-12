@@ -18,7 +18,7 @@ module JustGo
       @current_player_number = current_player_number
       @points = JustGo::PointSet.new(points: points)
       @previous_state = previous_state
-      @player_stats = player_stats.map { |ps| JustGo::PlayerStat.new(ps) }
+      @player_stats = player_stats.map { |ps| JustGo::PlayerStat.new(**ps) }
       @errors = []
       @last_change = {}
     end
